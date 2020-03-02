@@ -22,7 +22,12 @@ public class Solver : MonoBehaviour
         for (int i = 0; i <= array.GetUpperBound(0); i++)
         {
             for (int j = 0; j <= array.GetUpperBound(1); j++)
-                Console.Write(array[i, j].ToString());
+            {
+                if (array[i, j] == 1)
+                    Console.Write("#");
+                else
+                    Console.Write("-");
+            }
             Console.WriteLine();
         }
     }
@@ -59,7 +64,7 @@ public class Solver : MonoBehaviour
         {
             if (rowMarks[i] != rowClues[indexX][i])
             {
-                if (rowMarks[i] != 0 || indexY == 0 || board[indexX, indexY - 1] == 0 || board[indexX, indexY - 1] == 2)
+                if (rowMarks[i] != 0 || indexY == 0 || board[indexX, indexY - 1] != 1)
                     return true;
                 else
                     return false;
@@ -74,7 +79,7 @@ public class Solver : MonoBehaviour
         {
             if (colMarks[i] != colClues[indexY][i])
             {
-                if (colMarks[i] != 0 || indexX == 0 || board[indexX - 1, indexY] == 0 || board[indexX - 1, indexY] == 2)
+                if (colMarks[i] != 0 || indexX == 0 || board[indexX - 1, indexY] != 1)
                     return true;
                 else
                     return false;
