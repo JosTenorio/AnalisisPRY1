@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System;
+using UnityEngine.UI;
 using UnityEngine;
+using System.Diagnostics;
 
 public class Nonogram : MonoBehaviour
 {
@@ -11,6 +13,7 @@ public class Nonogram : MonoBehaviour
         private List<List<int>> HorizontalHints;
         private List<List<int>> VerticalHints;
         private byte[,] Matrix;
+        private double SolvingTime = 0;
 
         public bool backtracking(byte[,] board, List<List<int>> rowClues, List<List<int>> colClues)
         {
@@ -95,7 +98,7 @@ public class Nonogram : MonoBehaviour
                 }
                 printResult += "\n";
             }
-            Debug.Log(printResult);
+            UnityEngine.Debug.Log(printResult);
             return;
         }
 
@@ -170,6 +173,17 @@ public class Nonogram : MonoBehaviour
         public byte[,] getMatrix()
         {
             return this.Matrix;
+        }
+
+        public void setSolvingTime(double pSolvingTime)
+        {
+            this.SolvingTime = pSolvingTime;
+            return;
+        }
+
+        public double getSolvingTime()
+        {
+            return this.SolvingTime;
         }
 
 
@@ -314,22 +328,32 @@ public class Nonogram : MonoBehaviour
             return false;
         }
 
+        public void TimedBacktracking() 
+        {
+            long ticks;
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            bool result = this.backtracking(this.getMatrix(), this.getHorizontalHints(), this.getVerticalHints());
+            stopwatch.Stop();
+            ticks = stopwatch.ElapsedTicks;
+            this.setSolvingTime (Math.Round(((double)ticks / Stopwatch.Frequency) * 1000000.0, 2));
+            this.Print();
+            if (result)
+            {
+                UnityEngine.Debug.Log("\nNonogram solved in " + this.getSolvingTime().ToString() + " microseconds");
+            }
+            else
+            {
+                UnityEngine.Debug.Log("\nNonogram can´t be solved");
+            }
+        }
+
     }
 
     // Start is called before the first frame update
     void Start()
     {
         NonogramBoard board = NonogramBoard.LoadNonogramBoard("Prueba.txt");
-        bool result = board.backtracking(board.getMatrix(), board.getHorizontalHints(), board.getVerticalHints());
-        board.Print();
-        if (result)
-        {
-            Debug.Log("\nNonogram solved");
-        }
-        else
-        {
-            Debug.Log("\nNonogram can´t be solved");
-        }
+        board.TimedBacktracking();
     }
 
     // Update is called once per frame
