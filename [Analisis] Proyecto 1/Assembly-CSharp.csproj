@@ -317,14 +317,14 @@
  <Reference Include="UnityEngine.XRModule">
  <HintPath>C:/Program Files/Unity/Hub/Editor/2019.3.1f1/Editor/Data/Managed/UnityEngine/UnityEngine.XRModule.dll</HintPath>
  </Reference>
+ <Reference Include="System.Windows.Forms">
+ <HintPath>C:/Users/Personal/Desktop/AnalisisPRY1/[Analisis] Proyecto 1/Assets/Plugins/System.Windows.Forms.dll</HintPath>
+ </Reference>
  <Reference Include="TextMeshPro-2017.3-Editor">
  <HintPath>C:/Users/Personal/Desktop/AnalisisPRY1/[Analisis] Proyecto 1/Assets/TextMesh Pro/Plugins/Editor DLL/TextMeshPro-2017.3-Editor.dll</HintPath>
  </Reference>
  <Reference Include="TextMeshPro-2017.3-Runtime">
  <HintPath>C:/Users/Personal/Desktop/AnalisisPRY1/[Analisis] Proyecto 1/Assets/TextMesh Pro/Plugins/Editor DLL/TextMeshPro-2017.3-Runtime.dll</HintPath>
- </Reference>
- <Reference Include="System.Windows.Forms">
- <HintPath>C:/Users/Personal/Desktop/AnalisisPRY1/[Analisis] Proyecto 1/Assets/Plugins/System.Windows.Forms.dll</HintPath>
  </Reference>
  <Reference Include="netstandard">
  <HintPath>C:/Program Files/Unity/Hub/Editor/2019.3.1f1/Editor/Data/NetStandard/ref/2.0.0/netstandard.dll</HintPath>
