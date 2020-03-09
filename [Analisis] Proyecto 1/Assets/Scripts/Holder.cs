@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using System;
 using System.Diagnostics;
 using UnityEngine.UI;
+using TMPro;
 
 public class Holder : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class Holder : MonoBehaviour
         private byte[,] Matrix;
         private double SolvingTime = 0;
         private bool Animated = false;
+        private bool Solvable = false;
 
         public void setVerticalHints(List<List<int>> pVerticalHints)
         {
@@ -67,6 +69,16 @@ public class Holder : MonoBehaviour
         public void setAnimated(bool pAnimated)
         {
             this.Animated = pAnimated;
+        }
+
+        public bool IsSolvable()
+        {
+            return this.Solvable;
+        }
+
+        public void setSolvable(bool pSolvable)
+        {
+            this.Solvable = pSolvable;
         }
 
         public bool backtracking(byte[,] board, List<List<int>> rowClues, List<List<int>> colClues)
@@ -153,47 +165,55 @@ public class Holder : MonoBehaviour
                 printResult += "\n";
             }
             UnityEngine.Debug.Log(printResult);
+            if (this.IsSolvable())
+            {
+                UnityEngine.Debug.Log("Nonogram was solved in " + Holder.getCurrentNonogramBoard().getSolvingTime().ToString() + " microseconds.");
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Nonogram cant be solved");
+            }
             return;
         }
 
 
         public static NonogramBoard LoadNonogramBoard(string fileName)
         {
-            string line;
-            NonogramBoard board = new NonogramBoard();
-            System.IO.StreamReader file = new System.IO.StreamReader(fileName);
-            string[] dimensions = (line = file.ReadLine()).Split(',');
-            int rows = Convert.ToInt32(dimensions[0]);
-            int columns = Convert.ToInt32(dimensions[1].Trim());
-            byte[,] Matrix = new byte[rows, columns];
-            List<List<int>> HorizontalHints = new List<List<int>>();
-            line = file.ReadLine();
-            while ((line = file.ReadLine()) != "COLUMNAS")
-            {
-                List<int> IntHints = new List<int>();
-                string[] hints = line.Split(',');
-                for (int cont = 0; cont < hints.Length; cont++)
+                string line;
+                NonogramBoard board = new NonogramBoard();
+                System.IO.StreamReader file = new System.IO.StreamReader(fileName);
+                string[] dimensions = (line = file.ReadLine()).Split(',');
+                int rows = Convert.ToInt32(dimensions[0]);
+                int columns = Convert.ToInt32(dimensions[1].Trim());
+                byte[,] Matrix = new byte[rows, columns];
+                List<List<int>> HorizontalHints = new List<List<int>>();
+                line = file.ReadLine();
+                while ((line = file.ReadLine()) != "COLUMNAS")
                 {
+                    List<int> IntHints = new List<int>();
+                    string[] hints = line.Split(',');
+                    for (int cont = 0; cont < hints.Length; cont++)
+                    {
 
-                    IntHints.Add(Convert.ToInt32(hints[cont].Trim()));
+                        IntHints.Add(Convert.ToInt32(hints[cont].Trim()));
+                    }
+                    HorizontalHints.Add(IntHints);
                 }
-                HorizontalHints.Add(IntHints);
-            }
-            List<List<int>> VerticalHints = new List<List<int>>();
-            while ((line = file.ReadLine()) != null)
-            {
-                List<int> IntHints = new List<int>();
-                string[] hints = line.Split(',');
-                for (int cont = 0; cont < hints.Length; cont++)
+                List<List<int>> VerticalHints = new List<List<int>>();
+                while ((line = file.ReadLine()) != null)
                 {
-                    IntHints.Add(Convert.ToInt32(hints[cont].Trim()));
+                    List<int> IntHints = new List<int>();
+                    string[] hints = line.Split(',');
+                    for (int cont = 0; cont < hints.Length; cont++)
+                    {
+                        IntHints.Add(Convert.ToInt32(hints[cont].Trim()));
+                    }
+                    VerticalHints.Add(IntHints);
                 }
-                VerticalHints.Add(IntHints);
-            }
-            board.setVerticalHints(VerticalHints);
-            board.setHorizontalHints(HorizontalHints);
-            board.setMatrix(Matrix);
-            return board;
+                board.setVerticalHints(VerticalHints);
+                board.setHorizontalHints(HorizontalHints);
+                board.setMatrix(Matrix);
+                return board;
         }
 
         private static Tuple<bool, int, int> findEmptySquare(byte[,] board)
@@ -344,20 +364,12 @@ public class Holder : MonoBehaviour
             bool result = this.backtracking(this.getMatrix(), this.getHorizontalHints(), this.getVerticalHints());
             stopwatch.Stop();
             ticks = stopwatch.ElapsedTicks;
-            this.setSolvingTime(Math.Round(((double)ticks / Stopwatch.Frequency) * 1000000.0, 2));
-            if (result)
-            {
-                UnityEngine.Debug.Log("\nNonogram solved in " + this.getSolvingTime().ToString() + " microseconds");
-            }
-            else
-            {
-                UnityEngine.Debug.Log("\nNonogram can´t be solved");
-            }
+            this.setSolvingTime(Math.Round(((double)ticks / Stopwatch.Frequency) * 1000.0, 3));
+            this.setSolvable(result);
         }
     }
 
     private static NonogramBoard CurrentNonogramBoard = null;
-
 
     public static void setCurrentNonogramBoard(NonogramBoard pCurrentNonogramBoard)
     {
@@ -370,13 +382,20 @@ public class Holder : MonoBehaviour
         return Holder.CurrentNonogramBoard;
     }
 
-    public void solveNonogram() 
+
+    public static void solveNonogram()
     {
         if (!Holder.getCurrentNonogramBoard().IsAnimated())
         {
             Holder.getCurrentNonogramBoard().TimedBacktracking();
             Holder.getCurrentNonogramBoard().Print();
+            GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "Excution time was " + Holder.getCurrentNonogramBoard().getSolvingTime().ToString() + " miliseconds";
         }
+        else
+        { 
+            
+        }
+
     }
 
     public void ReturnButton() 
@@ -387,7 +406,7 @@ public class Holder : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        this.solveNonogram();
+        Holder.solveNonogram();
     }
 
     // Update is called once per frame

@@ -14,7 +14,7 @@ public class MainMenu : MonoBehaviour
     [DllImport("user32.dll")]
     private static extern void OpenFileDialog();
 
-    public static Holder.NonogramBoard LoadFile() 
+    public static Holder.NonogramBoard CreateInstanceFromFile() 
     {
         string file = "";
         OpenFileDialog openFileDialog1;
@@ -35,7 +35,14 @@ public class MainMenu : MonoBehaviour
 
     public void LoadButton() 
     {
-        Holder.setCurrentNonogramBoard(LoadFile());
+        try
+        {
+            Holder.setCurrentNonogramBoard(CreateInstanceFromFile());
+        } 
+        catch (FormatException e)
+        {
+            Holder.setCurrentNonogramBoard(null);
+        }
     }
 
     public void SolveButton() 
