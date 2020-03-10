@@ -29,9 +29,9 @@ public class Holder : MonoBehaviour
     void Start()
     {
         CurrentNonogramBoard.TimedBacktracking();
-        CurrentNonogramBoard.Print();
+        CurrentNonogramBoard.print();
         if (CurrentNonogramBoard.isSolvable())
-            GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "Solved in:\n" + CurrentNonogramBoard.getSolvingTime().ToString() + " ms";
+            GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "SOLVED IN:\n" + CurrentNonogramBoard.getSolvingTime().ToString() + " ms";
         else
             GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "No solution \nfound";
     }

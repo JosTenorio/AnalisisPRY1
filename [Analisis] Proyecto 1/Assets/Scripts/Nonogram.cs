@@ -10,7 +10,7 @@ public class NonogramBoard
     private List<List<int>> HorizontalHints;
     private List<List<int>> VerticalHints;
     private byte[,] Matrix;
-    private double SolvingTime = 0;
+    private long SolvingTime = 0;
     private bool Animated = false;
     private bool Solvable = false;
 
@@ -29,11 +29,6 @@ public class NonogramBoard
         this.Matrix = Matrix;
     }
 
-    public void setSolvingTime(double SolvingTime)
-    {
-        this.SolvingTime = SolvingTime;
-    }
-
     public double getSolvingTime()
     {
         return this.SolvingTime;
@@ -49,7 +44,26 @@ public class NonogramBoard
         return this.Solvable;
     }
 
-    public void Print()
+    public void print()
+    {
+        string res = "";
+
+        for (int i = 0; i < HorizontalHints.Count; i++)
+        {
+
+            res += "\n";
+            for (int j = 0; j < VerticalHints.Count; j++)
+            {
+                if (Matrix[i,j] == 1)
+                    res += "▓";
+                else
+                    res += "▒";
+            }
+        }
+        UnityEngine.Debug.Log(res);
+    }
+
+    public void printComplete()
     {
         string printResult = "";
         int maxRowHints = 0;
@@ -317,11 +331,9 @@ public class NonogramBoard
 
     public void TimedBacktracking()
     {
-        long ticks;
         Stopwatch stopwatch = Stopwatch.StartNew();
         this.Solvable = backtracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
         stopwatch.Stop();
-        ticks = stopwatch.ElapsedTicks;
-        this.setSolvingTime(Math.Round(((double)ticks / Stopwatch.Frequency) * 1000.0, 3));
+        this.SolvingTime = stopwatch.ElapsedMilliseconds;
     }
 }
