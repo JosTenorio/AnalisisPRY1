@@ -9,6 +9,8 @@ public class NonogramBoard
 {
     private List<List<int>> HorizontalHints;
     private List<List<int>> VerticalHints;
+    private int rows;
+    private int columns;
     private byte[,] Matrix;
     private long SolvingTime = 0;
     private bool Animated = false;
@@ -17,11 +19,23 @@ public class NonogramBoard
     public void setVerticalHints(List<List<int>> VerticalHints)
     {
         this.VerticalHints = VerticalHints;
+        this.columns = VerticalHints.Count;
     }
 
     public void setHorizontalHints(List<List<int>> HorizontalHints)
     {
         this.HorizontalHints = HorizontalHints;
+        this.rows = HorizontalHints.Count;
+    }
+
+    public int getRows()
+    {
+        return this.rows;
+    }
+
+    public int getColumns()
+    {
+        return this.columns;
     }
 
     public void setMatrix(byte[,] Matrix)
@@ -331,9 +345,19 @@ public class NonogramBoard
 
     public void TimedBacktracking()
     {
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        this.Solvable = backtracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
-        stopwatch.Stop();
-        this.SolvingTime = stopwatch.ElapsedMilliseconds;
+        if (!Animated)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            this.Solvable = backtracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
+            stopwatch.Stop();
+            this.SolvingTime = stopwatch.ElapsedMilliseconds;
+        }
+        else
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            this.Solvable = backtracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
+            stopwatch.Stop();
+            this.SolvingTime = stopwatch.ElapsedMilliseconds;
+        }
     }
 }
