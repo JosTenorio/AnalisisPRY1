@@ -202,6 +202,26 @@ public class NonogramBoard
         return false;
     }
 
+    public bool animatedBacktracking(byte[,] board, List<List<int>> rowClues, List<List<int>> colClues)
+    {
+        Tuple<bool, int, int> emptySquare = NonogramBoard.findEmptySquare(board);
+        if (!emptySquare.Item1)
+            return true;
+        int indexX = emptySquare.Item2;
+        int indexY = emptySquare.Item3;
+        for (byte i = 1; i <= 2; i++)
+        {
+            if (NonogramBoard.isValid(board, rowClues, colClues, indexX, indexY, i))
+            {
+                board[indexX, indexY] = i;
+                if (backtracking(board, rowClues, colClues))
+                    return true;
+                board[indexX, indexY] = 0;
+            }
+        }
+        return false;
+    }
+
     private static Tuple<bool, int, int> findEmptySquare(byte[,] board)
     {
         for (int i = 0; i <= board.GetUpperBound(0); i++)
