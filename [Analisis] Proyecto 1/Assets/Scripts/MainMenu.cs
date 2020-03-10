@@ -14,7 +14,7 @@ public class MainMenu : MonoBehaviour
     [DllImport("user32.dll")]
     private static extern void OpenFileDialog();
 
-    public static Holder.NonogramBoard CreateInstanceFromFile() 
+    public static NonogramBoard CreateInstanceFromFile() 
     {
         string file = "";
         OpenFileDialog openFileDialog1;
@@ -24,11 +24,11 @@ public class MainMenu : MonoBehaviour
         openFileDialog1.CheckFileExists = true;
         openFileDialog1.CheckPathExists = true;
         DialogResult result = openFileDialog1.ShowDialog();
-        Holder.NonogramBoard newNonogramBoard = null;
+        NonogramBoard newNonogramBoard = null;
         if (result == DialogResult.OK)
         {
             file = openFileDialog1.FileName;
-            newNonogramBoard = Holder.NonogramBoard.LoadNonogramBoard(file);
+            newNonogramBoard = NonogramBoard.LoadNonogramBoard(file);
         }
         return newNonogramBoard;
     }
@@ -42,29 +42,17 @@ public class MainMenu : MonoBehaviour
         catch (FormatException e)
         {
             Holder.setCurrentNonogramBoard(null);
+            Console.WriteLine("Invalid format exception caught.", e);
         }
     }
 
     public void SolveButton() 
     {
-        if (Holder.getCurrentNonogramBoard() == null) 
+        if (Holder.getCurrentNonogramBoard() != null) 
         {
-            return;
+            GameObject ToggleAnimate = GameObject.Find("Toggle Animate");
+            Holder.getCurrentNonogramBoard().setAnimated(ToggleAnimate.GetComponent<Toggle>().isOn);
+            SceneManager.LoadScene("Solver");
         }
-        GameObject ToggleAnimate = GameObject.Find("Toggle Animate");
-        Holder.getCurrentNonogramBoard().setAnimated(ToggleAnimate.GetComponent<Toggle>().isOn);
-        SceneManager.LoadScene("Solver");
-    }
-
-     // Start is called before the first frame update
-    void Start()
-    {
-       
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 }
