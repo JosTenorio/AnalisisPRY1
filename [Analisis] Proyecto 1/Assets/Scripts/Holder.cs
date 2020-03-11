@@ -11,6 +11,7 @@ public class Holder : MonoBehaviour
 {
     private static NonogramBoard CurrentNonogramBoard = null;
     private static GameObject[,] Grid;
+    private static float tileSize, tileSpace, width, height;
 
     public static void setCurrentNonogramBoard(NonogramBoard nonogramBoard)
     {
@@ -21,53 +22,86 @@ public class Holder : MonoBehaviour
     {
         return CurrentNonogramBoard;
     }
-    public void ReturnButton() 
+    public void returnButton() 
     {
         SceneManager.LoadScene("Menu");
     }
 
-    //clean up
+    public void startButton()
+    {
+        CurrentNonogramBoard.TimedBacktracking();
+        drawGrid(CurrentNonogramBoard);
+        CurrentNonogramBoard.print();
+        if (CurrentNonogramBoard.isSolvable())
+            GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "SOLVED IN:\n" + CurrentNonogramBoard.getSolvingTime().ToString() + " ms";
+        else
+            GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "No solution \nfound";
+    }
+
     public void generateGrid(NonogramBoard CurrentNonogramBoard)
     {
-        GameObject emptyTileRef = (GameObject)Instantiate(Resources.Load("TileEmpty"));
-        GameObject markTileRef = (GameObject)Instantiate(Resources.Load("TileMark"));
         GameObject gridHolder = GameObject.Find("GridHolder");
         RectTransform gridRect = gridHolder.GetComponent<RectTransform>();
         Grid = new GameObject[CurrentNonogramBoard.getRows(), CurrentNonogramBoard.getColumns()];
-        float tileSize;
         if (CurrentNonogramBoard.getRows() > CurrentNonogramBoard.getColumns())
             tileSize = gridRect.rect.width / CurrentNonogramBoard.getRows();
         else
             tileSize = gridRect.rect.height / CurrentNonogramBoard.getColumns();
-        float tileSpace = tileSize / 4;
+        tileSpace = tileSize / 4;
         tileSize -= tileSpace;
-        float width = CurrentNonogramBoard.getColumns() * tileSpace;
-        float height = CurrentNonogramBoard.getRows() * tileSpace;
+        width = CurrentNonogramBoard.getColumns() * tileSpace;
+        height = CurrentNonogramBoard.getRows() * tileSpace;
+    }
+
+    public void drawGrid(NonogramBoard CurrentNonogramBoard)
+    {
+        GameObject emptyTileRef = (GameObject)Instantiate(Resources.Load("TileEmpty"));
+        GameObject markTileRef = (GameObject)Instantiate(Resources.Load("TileMark"));
+        GameObject gridHolder = GameObject.Find("GridHolder");
         for (int row = 0; row < CurrentNonogramBoard.getRows(); row++)
         {
             for (int col = 0; col < CurrentNonogramBoard.getColumns(); col++)
             {
-                GameObject emptyTile = (GameObject)Instantiate(emptyTileRef, gridHolder.transform);
+                GameObject tile;
+                if (CurrentNonogramBoard.getMatrix()[row, col] != 1)
+                    tile = (GameObject)Instantiate(emptyTileRef, gridHolder.transform);
+                else
+                    tile = (GameObject)Instantiate(markTileRef, gridHolder.transform);
                 float posX = col * tileSpace;
                 float posY = row * -tileSpace;
-                emptyTile.transform.localScale = new Vector2(tileSize, tileSize);
-                emptyTile.transform.position = new Vector3(posX + 1000 - width / 2 + tileSpace / 2, posY + height / 2 - tileSpace / 2, 1010);
-                Grid[row, col] = emptyTile;
+                tile.transform.localScale = new Vector2(tileSize, tileSize);
+                tile.transform.position = new Vector3(posX + 1000 - width / 2 + tileSpace / 2, posY + height / 2 - tileSpace / 2, 1010);
+                Destroy(Grid[row, col]);
+                Grid[row, col] = tile;
             }
         }
         Destroy(emptyTileRef);
         Destroy(markTileRef);
     }
 
+    public static void changeTile(bool mark, int row, int column)
+    {
+        GameObject emptyTileRef = (GameObject)Instantiate(Resources.Load("TileEmpty"));
+        GameObject markTileRef = (GameObject)Instantiate(Resources.Load("TileMark"));
+        GameObject gridHolder = GameObject.Find("GridHolder");
+        GameObject currentTile = Grid[row, column];
+        GameObject tile;
+        if (mark)
+            tile = (GameObject)Instantiate(markTileRef, gridHolder.transform);
+        else
+            tile = (GameObject)Instantiate(emptyTileRef, gridHolder.transform);
+        tile.transform.localScale = currentTile.transform.localScale;
+        tile.transform.position = currentTile.transform.position;
+        Destroy(Grid[row, column]);
+        Destroy(emptyTileRef);
+        Destroy(markTileRef);
+        Grid[row, column] = tile;
+    }
+
     void Start()
     {
         generateGrid(CurrentNonogramBoard);
-        //CurrentNonogramBoard.TimedBacktracking();
-        //CurrentNonogramBoard.print();
-        //if (CurrentNonogramBoard.isSolvable())
-        //    GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "SOLVED IN:\n" + CurrentNonogramBoard.getSolvingTime().ToString() + " ms";
-        //else
-        //    GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "No solution \nfound";
+        drawGrid(CurrentNonogramBoard);
     }
 
 }

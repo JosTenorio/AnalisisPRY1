@@ -28,6 +28,11 @@ public class NonogramBoard
         this.rows = HorizontalHints.Count;
     }
 
+    public byte[,] getMatrix()
+    {
+        return Matrix;
+    }
+
     public int getRows()
     {
         return this.rows;
@@ -214,9 +219,14 @@ public class NonogramBoard
             if (NonogramBoard.isValid(board, rowClues, colClues, indexX, indexY, i))
             {
                 board[indexX, indexY] = i;
+                if (i == 1)
+                    Holder.changeTile(true, indexX, indexY);
+                else
+                    Holder.changeTile(false, indexX, indexY);
                 if (backtracking(board, rowClues, colClues))
                     return true;
                 board[indexX, indexY] = 0;
+                Holder.changeTile(false, indexX, indexY);
             }
         }
         return false;
@@ -375,7 +385,7 @@ public class NonogramBoard
         else
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-            this.Solvable = backtracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
+            this.Solvable = animatedBacktracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
             stopwatch.Stop();
             this.SolvingTime = stopwatch.ElapsedMilliseconds;
         }
