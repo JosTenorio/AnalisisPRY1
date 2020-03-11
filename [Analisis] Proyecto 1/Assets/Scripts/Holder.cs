@@ -6,12 +6,14 @@ using System;
 using System.Diagnostics;
 using UnityEngine.UI;
 using TMPro;
+using System.Threading;
 
 public class Holder : MonoBehaviour
 {
     private static NonogramBoard CurrentNonogramBoard = null;
     private static GameObject[,] Grid;
     private static float tileSize, tileSpace, width, height;
+    private bool animateThread, threadDone;
 
     public static void setCurrentNonogramBoard(NonogramBoard nonogramBoard)
     {
@@ -24,18 +26,38 @@ public class Holder : MonoBehaviour
     }
     public void returnButton() 
     {
+        CurrentNonogramBoard = null;
         SceneManager.LoadScene("Menu");
     }
 
     public void startButton()
     {
-        CurrentNonogramBoard.TimedBacktracking();
-        drawGrid(CurrentNonogramBoard);
-        CurrentNonogramBoard.print();
+        if (CurrentNonogramBoard.isAnimated())
+        {
+            Thread thread = new Thread(backtrackingThread);
+            thread.Start();
+            animateThread = true;
+        }
+        else
+        {
+            CurrentNonogramBoard.TimedBacktracking();
+            CurrentNonogramBoard.print();
+            drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
+            updateText();
+        }
+    }
+
+    public void updateText()
+    {
         if (CurrentNonogramBoard.isSolvable())
             GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "SOLVED IN:\n" + CurrentNonogramBoard.getSolvingTime().ToString() + " ms";
         else
             GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "No solution \nfound";
+    }
+    public void backtrackingThread()
+    {
+        CurrentNonogramBoard.TimedBacktracking();
+        threadDone = true;
     }
 
     public void generateGrid(NonogramBoard CurrentNonogramBoard)
@@ -53,11 +75,8 @@ public class Holder : MonoBehaviour
         height = CurrentNonogramBoard.getRows() * tileSpace;
     }
 
-    public void drawGrid(NonogramBoard CurrentNonogramBoard)
+    public void drawGrid(NonogramBoard CurrentNonogramBoard, GameObject emptyTileRef, GameObject markTileRef, GameObject gridHolder)
     {
-        GameObject emptyTileRef = (GameObject)Instantiate(Resources.Load("TileEmpty"));
-        GameObject markTileRef = (GameObject)Instantiate(Resources.Load("TileMark"));
-        GameObject gridHolder = GameObject.Find("GridHolder");
         for (int row = 0; row < CurrentNonogramBoard.getRows(); row++)
         {
             for (int col = 0; col < CurrentNonogramBoard.getColumns(); col++)
@@ -79,29 +98,26 @@ public class Holder : MonoBehaviour
         Destroy(markTileRef);
     }
 
-    public static void changeTile(bool mark, int row, int column)
+    private void Start()
     {
-        GameObject emptyTileRef = (GameObject)Instantiate(Resources.Load("TileEmpty"));
-        GameObject markTileRef = (GameObject)Instantiate(Resources.Load("TileMark"));
-        GameObject gridHolder = GameObject.Find("GridHolder");
-        GameObject currentTile = Grid[row, column];
-        GameObject tile;
-        if (mark)
-            tile = (GameObject)Instantiate(markTileRef, gridHolder.transform);
-        else
-            tile = (GameObject)Instantiate(emptyTileRef, gridHolder.transform);
-        tile.transform.localScale = currentTile.transform.localScale;
-        tile.transform.position = currentTile.transform.position;
-        Destroy(Grid[row, column]);
-        Destroy(emptyTileRef);
-        Destroy(markTileRef);
-        Grid[row, column] = tile;
+        threadDone = animateThread = false;
+        generateGrid(CurrentNonogramBoard);
+        drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
     }
 
-    void Start()
+    //change call time
+    private void FixedUpdate()
     {
-        generateGrid(CurrentNonogramBoard);
-        drawGrid(CurrentNonogramBoard);
+        if (animateThread)
+        {
+            if (threadDone)
+            {
+                CurrentNonogramBoard.print();
+                updateText();
+                animateThread = false;
+            }
+            drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
+        }
     }
 
 }

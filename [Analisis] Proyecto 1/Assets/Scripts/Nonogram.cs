@@ -58,6 +58,11 @@ public class NonogramBoard
         this.Animated = Animated;
     }
 
+    public bool isAnimated()
+    {
+        return this.Animated;
+    }
+
     public bool isSolvable()
     {
         return this.Solvable;
@@ -207,31 +212,6 @@ public class NonogramBoard
         return false;
     }
 
-    public bool animatedBacktracking(byte[,] board, List<List<int>> rowClues, List<List<int>> colClues)
-    {
-        Tuple<bool, int, int> emptySquare = NonogramBoard.findEmptySquare(board);
-        if (!emptySquare.Item1)
-            return true;
-        int indexX = emptySquare.Item2;
-        int indexY = emptySquare.Item3;
-        for (byte i = 1; i <= 2; i++)
-        {
-            if (NonogramBoard.isValid(board, rowClues, colClues, indexX, indexY, i))
-            {
-                board[indexX, indexY] = i;
-                if (i == 1)
-                    Holder.changeTile(true, indexX, indexY);
-                else
-                    Holder.changeTile(false, indexX, indexY);
-                if (backtracking(board, rowClues, colClues))
-                    return true;
-                board[indexX, indexY] = 0;
-                Holder.changeTile(false, indexX, indexY);
-            }
-        }
-        return false;
-    }
-
     private static Tuple<bool, int, int> findEmptySquare(byte[,] board)
     {
         for (int i = 0; i <= board.GetUpperBound(0); i++)
@@ -243,16 +223,15 @@ public class NonogramBoard
 
     private static bool isValid(byte[,] board, List<List<int>> rowClues, List<List<int>> colClues, int indexX, int indexY, int value)
     {
-        List<int> rowMarks = getRowMarks(board, rowClues, indexX);
-        List<int> colMarks = getColumnMarks(board, colClues, indexY);
         if (value == 1)
-            return (isValidMarkRow(board, rowClues, indexX, indexY, rowMarks) && isValidMarkColumn(board, colClues, indexY, indexX, colMarks));
+            return (isValidMarkRow(board, rowClues, indexX, indexY) && isValidMarkColumn(board, colClues, indexY, indexX));
         else
-            return (isValidBlankRow(board, rowClues, indexX, rowMarks) && isValidBlankColumn(board, colClues, indexY, colMarks));
+            return (isValidBlankRow(board, rowClues, indexX) && isValidBlankColumn(board, colClues, indexY));
     }
 
-    private static bool isValidMarkRow(byte[,] board, List<List<int>> rowClues, int indexX, int indexY, List<int> rowMarks)
+    private static bool isValidMarkRow(byte[,] board, List<List<int>> rowClues, int indexX, int indexY)
     {
+        List<int> rowMarks = getRowMarks(board, rowClues, indexX);
         for (int i = 0; i < rowMarks.Count; i++)
         {
             if (rowMarks[i] != rowClues[indexX][i])
@@ -266,8 +245,9 @@ public class NonogramBoard
         return false;
     }
 
-    private static bool isValidMarkColumn(byte[,] board, List<List<int>> colClues, int indexY, int indexX, List<int> colMarks)
+    private static bool isValidMarkColumn(byte[,] board, List<List<int>> colClues, int indexY, int indexX)
     {
+        List<int> colMarks = getColumnMarks(board, colClues, indexY);
         for (int i = 0; i < colMarks.Count; i++)
         {
             if (colMarks[i] != colClues[indexY][i])
@@ -287,16 +267,16 @@ public class NonogramBoard
         for (int i = 0; i < rowClues[indexX].Count; i++)
             rowMarks.Add(0);
         int indexClues = 0;
-        bool skip = true;
         for (int i = 0; i <= board.GetUpperBound(1); i++)
         {
             if (board[indexX, i] == 1)
             {
-                skip = false;
                 rowMarks[indexClues] += 1;
+                if (i + 1 <= board.GetUpperBound(1) && board[indexX, i + 1] != 1)
+                    indexClues++;
             }
-            else if (!skip && board[indexX, i - 1] == 1)
-                indexClues++;
+            else if (board[indexX, i] == 0)
+                break;
         }
         return rowMarks;
     }
@@ -307,29 +287,34 @@ public class NonogramBoard
         for (int i = 0; i < colClues[indexY].Count; i++)
             colMarks.Add(0);
         int indexClues = 0;
-        bool skip = true;
         for (int i = 0; i <= board.GetUpperBound(0); i++)
         {
             if (board[i, indexY] == 1)
             {
-                skip = false;
                 colMarks[indexClues] += 1;
+                if (i + 1 <= board.GetUpperBound(0) && board[i + 1, indexY] != 1)
+                    indexClues++;
             }
-            else if (!skip && board[i - 1, indexY] == 1)
-                indexClues++;
+            else if (board[i, indexY] == 0)
+                break;
         }
         return colMarks;
     }
 
-    private static bool isValidBlankRow(byte[,] board, List<List<int>> rowClues, int indexX, List<int> rowMarks)
+    private static bool isValidBlankRow(byte[,] board, List<List<int>> rowClues, int indexX)
     {
+        List<int> rowMarks = getRowMarks(board, rowClues, indexX);
         int rowBlanksMax = board.GetLength(1);
         for (int i = 0; i < rowClues[indexX].Count; i++)
             rowBlanksMax -= rowClues[indexX][i];
         int rowBlanks = 0;
         for (int i = 0; i < board.GetLength(1); i++)
+        {
             if (board[indexX, i] == 2)
                 rowBlanks++;
+            else if (board[indexX, i] == 0)
+                break;
+        }
         if (rowBlanks < rowBlanksMax)
         {
             for (int i = 0; i < rowMarks.Count; i++)
@@ -347,15 +332,20 @@ public class NonogramBoard
         return false;
     }
 
-    private static bool isValidBlankColumn(byte[,] board, List<List<int>> colClues, int indexY, List<int> colMarks)
+    private static bool isValidBlankColumn(byte[,] board, List<List<int>> colClues, int indexY)
     {
+        List<int> colMarks = getColumnMarks(board, colClues, indexY);
         int colBlanksMax = board.GetLength(0);
         for (int i = 0; i < colClues[indexY].Count; i++)
             colBlanksMax -= colClues[indexY][i];
         int colBlanks = 0;
         for (int i = 0; i < board.GetLength(0); i++)
+        {
             if (board[i, indexY] == 2)
                 colBlanks++;
+            else if (board[i, indexY] == 0)
+                break;
+        }
         if (colBlanks < colBlanksMax)
         {
             for (int i = 0; i < colMarks.Count; i++)
@@ -375,19 +365,9 @@ public class NonogramBoard
 
     public void TimedBacktracking()
     {
-        if (!Animated)
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            this.Solvable = backtracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
-            stopwatch.Stop();
-            this.SolvingTime = stopwatch.ElapsedMilliseconds;
-        }
-        else
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            this.Solvable = animatedBacktracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
-            stopwatch.Stop();
-            this.SolvingTime = stopwatch.ElapsedMilliseconds;
-        }
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        this.Solvable = backtracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
+        stopwatch.Stop();
+        this.SolvingTime = stopwatch.ElapsedMilliseconds;
     }
 }
