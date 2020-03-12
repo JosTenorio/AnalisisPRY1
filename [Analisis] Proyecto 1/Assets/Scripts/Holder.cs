@@ -24,9 +24,10 @@ public class Holder : MonoBehaviour
     {
         return CurrentNonogramBoard;
     }
+
     public void returnButton() 
     {
-        CurrentNonogramBoard = null;
+        Holder.setCurrentNonogramBoard(null);
         SceneManager.LoadScene("Menu");
     }
 
@@ -49,10 +50,11 @@ public class Holder : MonoBehaviour
     public void updateText()
     {
         if (CurrentNonogramBoard.isSolvable())
-            GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "SOLVED IN:\n" + CurrentNonogramBoard.getSolvingTime().ToString() + " ms";
+            GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "Solved in:\n" + CurrentNonogramBoard.getSolvingTime().ToString() + " ms";
         else
             GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "No solution \nfound";
     }
+
     public void animatedBacktrackingThread()
     {
         animateThread = true;
