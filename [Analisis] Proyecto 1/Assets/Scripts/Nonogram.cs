@@ -71,17 +71,29 @@ public class NonogramBoard
     public void print()
     {
         string res = "";
-
-        for (int i = 0; i < HorizontalHints.Count; i++)
+        for (int i = 0; i < rows; i++)
         {
-
             res += "\n";
-            for (int j = 0; j < VerticalHints.Count; j++)
+            for (int j = 0; j < columns; j++)
             {
                 if (Matrix[i,j] == 1)
                     res += "▓";
                 else
                     res += "▒";
+            }
+        }
+        UnityEngine.Debug.Log(res);
+    }
+
+    public void printNumerical()
+    {
+        string res = "";
+        for (int i = 0; i < rows; i++)
+        {
+            res += "\n";
+            for (int j = 0; j < columns; j++)
+            {
+                res += Matrix[i,j].ToString();
             }
         }
         UnityEngine.Debug.Log(res);
@@ -192,51 +204,55 @@ public class NonogramBoard
         return board;
     }
 
-    public bool backtracking(byte[,] board, List<List<int>> rowClues, List<List<int>> colClues)
+    public bool backtracking(Tuple<int, int, bool> indexes)
     {
-        Tuple<bool, int, int> emptySquare = NonogramBoard.findEmptySquare(board);
-        if (!emptySquare.Item1)
+        if (indexes.Item3)
             return true;
-        int indexX = emptySquare.Item2;
-        int indexY = emptySquare.Item3;
+        int indexX = indexes.Item1;
+        int indexY = indexes.Item2;
         for (byte i = 1; i <= 2; i++)
         {
-            if (NonogramBoard.isValid(board, rowClues, colClues, indexX, indexY, i))
+            if (isValid(indexX, indexY, i))
             {
-                board[indexX, indexY] = i;
-                if (backtracking(board, rowClues, colClues))
+                Matrix[indexX, indexY] = i;
+                if (backtracking(findEmptySquare(indexX, indexY)))
                     return true;
-                board[indexX, indexY] = 0;
+                Matrix[indexX, indexY] = 0;
             }
         }
         return false;
     }
 
-    private static Tuple<bool, int, int> findEmptySquare(byte[,] board)
+    private Tuple<int, int, bool> findEmptySquare(int indexX, int indexY)
     {
-        for (int i = 0; i <= board.GetUpperBound(0); i++)
-            for (int j = 0; j <= board.GetUpperBound(1); j++)
-                if (board[i, j] == 0)
-                    return Tuple.Create(true, i, j);
-        return Tuple.Create(false, 0, 0);
+        if (indexX == (rows - 1))
+        {
+            if (indexY == (columns - 1))
+                return Tuple.Create(indexX, indexY, true);
+            indexX = 0;
+            indexY++;
+        }
+        else
+            indexX++;
+        return Tuple.Create(indexX, indexY, false);
     }
 
-    private static bool isValid(byte[,] board, List<List<int>> rowClues, List<List<int>> colClues, int indexX, int indexY, int value)
+    private bool isValid(int indexX, int indexY, int value)
     {
         if (value == 1)
-            return (isValidMarkRow(board, rowClues, indexX, indexY) && isValidMarkColumn(board, colClues, indexY, indexX));
+            return (isValidMarkRow(indexX, indexY) && isValidMarkColumn(indexY, indexX));
         else
-            return (isValidBlankRow(board, rowClues, indexX) && isValidBlankColumn(board, colClues, indexY));
+            return (isValidBlankRow(indexX) && isValidBlankColumn(indexY));
     }
 
-    private static bool isValidMarkRow(byte[,] board, List<List<int>> rowClues, int indexX, int indexY)
+    private bool isValidMarkRow(int indexX, int indexY)
     {
-        List<int> rowMarks = getRowMarks(board, rowClues, indexX);
+        List<int> rowMarks = getRowMarks(indexX);
         for (int i = 0; i < rowMarks.Count; i++)
         {
-            if (rowMarks[i] != rowClues[indexX][i])
+            if (rowMarks[i] != HorizontalHints[indexX][i])
             {
-                if (rowMarks[i] != 0 || indexY == 0 || board[indexX, indexY - 1] != 1)
+                if (rowMarks[i] != 0 || indexY == 0 || Matrix[indexX, indexY - 1] != 1)
                     return true;
                 else
                     return false;
@@ -245,14 +261,14 @@ public class NonogramBoard
         return false;
     }
 
-    private static bool isValidMarkColumn(byte[,] board, List<List<int>> colClues, int indexY, int indexX)
+    private bool isValidMarkColumn(int indexY, int indexX)
     {
-        List<int> colMarks = getColumnMarks(board, colClues, indexY);
+        List<int> colMarks = getColumnMarks(indexY);
         for (int i = 0; i < colMarks.Count; i++)
         {
-            if (colMarks[i] != colClues[indexY][i])
+            if (colMarks[i] != VerticalHints[indexY][i])
             {
-                if (colMarks[i] != 0 || indexX == 0 || board[indexX - 1, indexY] != 1)
+                if (colMarks[i] != 0 || indexX == 0 || Matrix[indexX - 1, indexY] != 1)
                     return true;
                 else
                     return false;
@@ -261,65 +277,65 @@ public class NonogramBoard
         return false;
     }
 
-    private static List<int> getRowMarks(byte[,] board, List<List<int>> rowClues, int indexX)
+    private List<int> getRowMarks(int indexX)
     {
         List<int> rowMarks = new List<int> { };
-        for (int i = 0; i < rowClues[indexX].Count; i++)
+        for (int i = 0; i < HorizontalHints[indexX].Count; i++)
             rowMarks.Add(0);
         int indexClues = 0;
-        for (int i = 0; i <= board.GetUpperBound(1); i++)
+        for (int i = 0; i <= columns; i++)
         {
-            if (board[indexX, i] == 1)
+            if (Matrix[indexX, i] == 1)
             {
                 rowMarks[indexClues] += 1;
-                if (i + 1 <= board.GetUpperBound(1) && board[indexX, i + 1] != 1)
+                if (i + 1 < columns && Matrix[indexX, i + 1] != 1)
                     indexClues++;
             }
-            else if (board[indexX, i] == 0)
+            else if (Matrix[indexX, i] == 0)
                 break;
         }
         return rowMarks;
     }
 
-    private static List<int> getColumnMarks(byte[,] board, List<List<int>> colClues, int indexY)
+    private List<int> getColumnMarks(int indexY)
     {
         List<int> colMarks = new List<int> { };
-        for (int i = 0; i < colClues[indexY].Count; i++)
+        for (int i = 0; i < VerticalHints[indexY].Count; i++)
             colMarks.Add(0);
         int indexClues = 0;
-        for (int i = 0; i <= board.GetUpperBound(0); i++)
+        for (int i = 0; i < rows; i++)
         {
-            if (board[i, indexY] == 1)
+            if (Matrix[i, indexY] == 1)
             {
                 colMarks[indexClues] += 1;
-                if (i + 1 <= board.GetUpperBound(0) && board[i + 1, indexY] != 1)
+                if (i + 1 < rows && Matrix[i + 1, indexY] != 1)
                     indexClues++;
             }
-            else if (board[i, indexY] == 0)
+            else if (Matrix[i, indexY] == 0)
                 break;
         }
         return colMarks;
     }
 
-    private static bool isValidBlankRow(byte[,] board, List<List<int>> rowClues, int indexX)
+    private bool isValidBlankRow(int indexX)
     {
-        List<int> rowMarks = getRowMarks(board, rowClues, indexX);
-        int rowBlanksMax = board.GetLength(1);
-        for (int i = 0; i < rowClues[indexX].Count; i++)
-            rowBlanksMax -= rowClues[indexX][i];
+        List<int> rowMarks = getRowMarks(indexX);
+        int rowBlanksMax = columns;
+        for (int i = 0; i < HorizontalHints[indexX].Count; i++)
+            rowBlanksMax -= HorizontalHints[indexX][i];
         int rowBlanks = 0;
-        for (int i = 0; i < board.GetLength(1); i++)
+        for (int i = 0; i < columns; i++)
         {
-            if (board[indexX, i] == 2)
+            if (Matrix[indexX, i] == 2)
                 rowBlanks++;
-            else if (board[indexX, i] == 0)
+            else if (Matrix[indexX, i] == 0)
                 break;
         }
         if (rowBlanks < rowBlanksMax)
         {
             for (int i = 0; i < rowMarks.Count; i++)
             {
-                if (rowMarks[i] != rowClues[indexX][i])
+                if (rowMarks[i] != HorizontalHints[indexX][i])
                 {
                     if (rowMarks[i] == 0)
                         return true;
@@ -332,25 +348,25 @@ public class NonogramBoard
         return false;
     }
 
-    private static bool isValidBlankColumn(byte[,] board, List<List<int>> colClues, int indexY)
+    private bool isValidBlankColumn(int indexY)
     {
-        List<int> colMarks = getColumnMarks(board, colClues, indexY);
-        int colBlanksMax = board.GetLength(0);
-        for (int i = 0; i < colClues[indexY].Count; i++)
-            colBlanksMax -= colClues[indexY][i];
+        List<int> colMarks = getColumnMarks(indexY);
+        int colBlanksMax = rows;
+        for (int i = 0; i < VerticalHints[indexY].Count; i++)
+            colBlanksMax -= VerticalHints[indexY][i];
         int colBlanks = 0;
-        for (int i = 0; i < board.GetLength(0); i++)
+        for (int i = 0; i < rows; i++)
         {
-            if (board[i, indexY] == 2)
+            if (Matrix[i, indexY] == 2)
                 colBlanks++;
-            else if (board[i, indexY] == 0)
+            else if (Matrix[i, indexY] == 0)
                 break;
         }
         if (colBlanks < colBlanksMax)
         {
             for (int i = 0; i < colMarks.Count; i++)
             {
-                if (colMarks[i] != colClues[indexY][i])
+                if (colMarks[i] != VerticalHints[indexY][i])
                 {
                     if (colMarks[i] == 0)
                         return true;
@@ -366,7 +382,7 @@ public class NonogramBoard
     public void TimedBacktracking()
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        this.Solvable = backtracking(this.Matrix, this.HorizontalHints, this.VerticalHints);
+        this.Solvable = backtracking(Tuple.Create(0, 0, false));
         stopwatch.Stop();
         this.SolvingTime = stopwatch.ElapsedMilliseconds;
     }

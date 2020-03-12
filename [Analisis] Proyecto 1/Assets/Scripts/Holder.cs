@@ -34,16 +34,15 @@ public class Holder : MonoBehaviour
     {
         if (CurrentNonogramBoard.isAnimated())
         {
-            Thread thread = new Thread(backtrackingThread);
+            Thread thread = new Thread(animatedBacktrackingThread);
             thread.Start();
-            animateThread = true;
         }
         else
         {
             CurrentNonogramBoard.TimedBacktracking();
-            CurrentNonogramBoard.print();
             drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
             updateText();
+            CurrentNonogramBoard.print();
         }
     }
 
@@ -54,8 +53,9 @@ public class Holder : MonoBehaviour
         else
             GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "No solution \nfound";
     }
-    public void backtrackingThread()
+    public void animatedBacktrackingThread()
     {
+        animateThread = true;
         CurrentNonogramBoard.TimedBacktracking();
         threadDone = true;
     }
@@ -105,15 +105,14 @@ public class Holder : MonoBehaviour
         drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
     }
 
-    //change call time
     private void FixedUpdate()
     {
         if (animateThread)
         {
             if (threadDone)
             {
-                CurrentNonogramBoard.print();
                 updateText();
+                CurrentNonogramBoard.print();
                 animateThread = false;
             }
             drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
