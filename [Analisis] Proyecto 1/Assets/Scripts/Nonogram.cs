@@ -16,6 +16,16 @@ public class NonogramBoard
     private bool Animated = false;
     private bool Solvable = false;
 
+    public List<List<int>> getVerticalHints()
+    {
+        return this.VerticalHints;
+    }
+
+    public List<List<int>> getHorizontalHints()
+    {
+        return this.HorizontalHints;
+    }
+
     public void setVerticalHints(List<List<int>> VerticalHints)
     {
         this.VerticalHints = VerticalHints;

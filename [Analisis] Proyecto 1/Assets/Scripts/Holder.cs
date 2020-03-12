@@ -47,6 +47,36 @@ public class Holder : MonoBehaviour
         }
     }
 
+    public static void updateHints()
+    {
+        string VerticalHintsText = GameObject.Find("Vertical Hints").GetComponentInChildren<TextMeshProUGUI>().text;
+        string HorizontalHintsText = GameObject.Find("Horizontal Hints").GetComponentInChildren<TextMeshProUGUI>().text;
+        int i = 1;
+        foreach (List<int> HintList in Holder.getCurrentNonogramBoard().getVerticalHints())
+        {
+            VerticalHintsText += "(" + i.ToString() + ") ";
+            foreach (int Hint in HintList)
+            {
+                VerticalHintsText += Hint.ToString() + " "; 
+            }
+            VerticalHintsText += "\n";
+            i++;
+        }
+        i = 1;
+        foreach (List<int> HintList in Holder.getCurrentNonogramBoard().getHorizontalHints())
+        {
+            HorizontalHintsText += "(" + i.ToString() + ") ";
+            foreach (int Hint in HintList)
+            {
+                HorizontalHintsText += Hint.ToString() + " ";
+            }
+            HorizontalHintsText += "\n";
+            i++;
+        }
+        GameObject.Find("Vertical Hints").GetComponentInChildren<TextMeshProUGUI>().text = VerticalHintsText;
+        GameObject.Find("Horizontal Hints").GetComponentInChildren<TextMeshProUGUI>().text =  HorizontalHintsText;
+    }
+
     public void updateText()
     {
         if (CurrentNonogramBoard.isSolvable())
@@ -102,6 +132,7 @@ public class Holder : MonoBehaviour
 
     private void Start()
     {
+        Holder.updateHints();
         threadDone = animateThread = false;
         generateGrid(CurrentNonogramBoard);
         drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
