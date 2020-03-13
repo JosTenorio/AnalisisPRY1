@@ -11,13 +11,17 @@ using System.Threading;
 public class Holder : MonoBehaviour
 {
     private static NonogramBoard CurrentNonogramBoard = null;
+    private static NonogramBoard CurrentNonogramBoardDup = null;
     private static GameObject[,] Grid;
     private static float tileSize, tileSpace, width, height;
-    private bool animateThread, threadDone;
+    private static bool animateThread, threadDone;
+    private Thread thread, threadDup;
+    public static Mutex mutexLock = new Mutex();
 
     public static void setCurrentNonogramBoard(NonogramBoard nonogramBoard)
     {
         CurrentNonogramBoard = nonogramBoard;
+        CurrentNonogramBoardDup = CurrentNonogramBoard.deepCopy();
     }
 
     public static NonogramBoard getCurrentNonogramBoard()
@@ -25,9 +29,20 @@ public class Holder : MonoBehaviour
         return CurrentNonogramBoard;
     }
 
+    public static void setThreadDone()
+    {
+        threadDone = true;
+    }
+
+    public static bool isThreadDone()
+    {
+        return threadDone;
+    }
+
     public void returnButton() 
     {
-        Holder.setCurrentNonogramBoard(null);
+        CurrentNonogramBoard = null;
+        CurrentNonogramBoardDup = null;
         SceneManager.LoadScene("Menu");
     }
 
@@ -35,15 +50,31 @@ public class Holder : MonoBehaviour
     {
         if (CurrentNonogramBoard.isAnimated())
         {
-            Thread thread = new Thread(animatedBacktrackingThread);
-            thread.Start();
+            thread = new Thread(CurrentNonogramBoard.TimedBacktracking);
+            thread.Start(true);
+            animateThread = true;
         }
         else
         {
-            CurrentNonogramBoard.TimedBacktracking();
-            drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
-            updateText();
-            CurrentNonogramBoard.print();
+            thread = new Thread(CurrentNonogramBoard.TimedBacktracking);
+            threadDup = new Thread(CurrentNonogramBoardDup.TimedBacktracking);
+            thread.Start(true);
+            threadDup.Start(false);
+        }
+    }
+
+    public void setWinnerThread()
+    {
+        if (CurrentNonogramBoard.isWinner())
+        {
+            threadDup.Abort();
+            UnityEngine.Debug.Log("Solved by Thread 1");
+        }
+        else
+        {
+            CurrentNonogramBoard = CurrentNonogramBoardDup;
+            thread.Abort();
+            UnityEngine.Debug.Log("Solved by Thread 2");
         }
     }
 
@@ -77,19 +108,12 @@ public class Holder : MonoBehaviour
         GameObject.Find("Horizontal Hints").GetComponentInChildren<TextMeshProUGUI>().text =  HorizontalHintsText;
     }
 
-    public void updateText()
+    public void updateText(NonogramBoard CurrentNonogramBoard)
     {
         if (CurrentNonogramBoard.isSolvable())
             GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "Solved in:\n" + CurrentNonogramBoard.getSolvingTime().ToString() + " ms";
         else
             GameObject.Find("Text Execution Time").GetComponent<TextMeshProUGUI>().text = "No solution \nfound";
-    }
-
-    public void animatedBacktrackingThread()
-    {
-        animateThread = true;
-        CurrentNonogramBoard.TimedBacktracking();
-        threadDone = true;
     }
 
     public void generateGrid(NonogramBoard CurrentNonogramBoard)
@@ -107,8 +131,11 @@ public class Holder : MonoBehaviour
         height = CurrentNonogramBoard.getRows() * tileSpace;
     }
 
-    public void drawGrid(NonogramBoard CurrentNonogramBoard, GameObject emptyTileRef, GameObject markTileRef, GameObject gridHolder)
+    public void drawGrid(NonogramBoard CurrentNonogramBoard)
     {
+        GameObject emptyTileRef = (GameObject)Instantiate(Resources.Load("TileEmpty"));
+        GameObject markTileRef = (GameObject)Instantiate(Resources.Load("TileMark"));
+        GameObject gridHolder = GameObject.Find("GridHolder");
         for (int row = 0; row < CurrentNonogramBoard.getRows(); row++)
         {
             for (int col = 0; col < CurrentNonogramBoard.getColumns(); col++)
@@ -135,20 +162,22 @@ public class Holder : MonoBehaviour
         Holder.updateHints();
         threadDone = animateThread = false;
         generateGrid(CurrentNonogramBoard);
-        drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
+        drawGrid(CurrentNonogramBoard);
     }
 
     private void FixedUpdate()
     {
         if (animateThread)
         {
-            if (threadDone)
-            {
-                updateText();
-                CurrentNonogramBoard.print();
-                animateThread = false;
-            }
-            drawGrid(CurrentNonogramBoard, (GameObject)Instantiate(Resources.Load("TileEmpty")), (GameObject)Instantiate(Resources.Load("TileMark")), GameObject.Find("GridHolder"));
+            drawGrid(CurrentNonogramBoard);
+        }
+        if (threadDone)
+        {
+            setWinnerThread();
+            drawGrid(CurrentNonogramBoard);
+            updateText(CurrentNonogramBoard);
+            CurrentNonogramBoard.print();
+            animateThread = threadDone = false;
         }
     }
 

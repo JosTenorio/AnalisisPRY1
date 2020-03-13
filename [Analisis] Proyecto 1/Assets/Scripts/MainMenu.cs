@@ -18,9 +18,44 @@ public class MainMenu : MonoBehaviour
         NonogramBoard newNonogramBoard = null;
         if (filePath != "")
         {
-            newNonogramBoard = NonogramBoard.LoadNonogramBoard(filePath);
+            newNonogramBoard = LoadNonogramBoard(filePath);
         }
         return newNonogramBoard;
+    }
+    public static NonogramBoard LoadNonogramBoard(string fileName)
+    {
+        string line;
+        System.IO.StreamReader file = new System.IO.StreamReader(fileName);
+        string[] dimensions = (line = file.ReadLine()).Split(',');
+        int rows = Convert.ToInt32(dimensions[0]);
+        int columns = Convert.ToInt32(dimensions[1].Trim());
+        byte[,] Matrix = new byte[rows, columns];
+        List<List<int>> HorizontalHints = new List<List<int>>();
+        line = file.ReadLine();
+        while ((line = file.ReadLine()) != "COLUMNAS")
+        {
+            List<int> IntHints = new List<int>();
+            string[] hints = line.Split(',');
+            for (int cont = 0; cont < hints.Length; cont++)
+            {
+
+                IntHints.Add(Convert.ToInt32(hints[cont].Trim()));
+            }
+            HorizontalHints.Add(IntHints);
+        }
+        List<List<int>> VerticalHints = new List<List<int>>();
+        while ((line = file.ReadLine()) != null)
+        {
+            List<int> IntHints = new List<int>();
+            string[] hints = line.Split(',');
+            for (int cont = 0; cont < hints.Length; cont++)
+            {
+                IntHints.Add(Convert.ToInt32(hints[cont].Trim()));
+            }
+            VerticalHints.Add(IntHints);
+        }
+        NonogramBoard board = new NonogramBoard(Matrix, VerticalHints, HorizontalHints);
+        return board;
     }
 
     public void LoadButton() 

@@ -15,6 +15,22 @@ public class NonogramBoard
     private long SolvingTime = 0;
     private bool Animated = false;
     private bool Solvable = false;
+    private bool Winner = false;
+
+    public NonogramBoard(byte[,] Matrix, List<List<int>> VerticalHints, List<List<int>> HorizontalHints)
+    {
+        this.Matrix = Matrix;
+        this.VerticalHints = VerticalHints;
+        this.HorizontalHints = HorizontalHints;
+        this.columns = VerticalHints.Count;
+        this.rows = HorizontalHints.Count;
+    }
+
+    public NonogramBoard deepCopy()
+    {
+        NonogramBoard boardCopy = new NonogramBoard(new byte[rows, columns], VerticalHints, HorizontalHints);
+        return boardCopy;
+    }
 
     public List<List<int>> getVerticalHints()
     {
@@ -24,18 +40,6 @@ public class NonogramBoard
     public List<List<int>> getHorizontalHints()
     {
         return this.HorizontalHints;
-    }
-
-    public void setVerticalHints(List<List<int>> VerticalHints)
-    {
-        this.VerticalHints = VerticalHints;
-        this.columns = VerticalHints.Count;
-    }
-
-    public void setHorizontalHints(List<List<int>> HorizontalHints)
-    {
-        this.HorizontalHints = HorizontalHints;
-        this.rows = HorizontalHints.Count;
     }
 
     public byte[,] getMatrix()
@@ -51,11 +55,6 @@ public class NonogramBoard
     public int getColumns()
     {
         return this.columns;
-    }
-
-    public void setMatrix(byte[,] Matrix)
-    {
-        this.Matrix = Matrix;
     }
 
     public double getSolvingTime()
@@ -76,6 +75,11 @@ public class NonogramBoard
     public bool isSolvable()
     {
         return this.Solvable;
+    }
+
+    public bool isWinner()
+    {
+        return this.Winner;
     }
 
     public void print()
@@ -175,45 +179,6 @@ public class NonogramBoard
         UnityEngine.Debug.Log(printResult);
     }
 
-    public static NonogramBoard LoadNonogramBoard(string fileName)
-    {
-        string line;
-        NonogramBoard board = new NonogramBoard();
-        System.IO.StreamReader file = new System.IO.StreamReader(fileName);
-        string[] dimensions = (line = file.ReadLine()).Split(',');
-        int rows = Convert.ToInt32(dimensions[0]);
-        int columns = Convert.ToInt32(dimensions[1].Trim());
-        byte[,] Matrix = new byte[rows, columns];
-        List<List<int>> HorizontalHints = new List<List<int>>();
-        line = file.ReadLine();
-        while ((line = file.ReadLine()) != "COLUMNAS")
-        {
-            List<int> IntHints = new List<int>();
-            string[] hints = line.Split(',');
-            for (int cont = 0; cont < hints.Length; cont++)
-            {
-
-                IntHints.Add(Convert.ToInt32(hints[cont].Trim()));
-            }
-            HorizontalHints.Add(IntHints);
-        }
-        List<List<int>> VerticalHints = new List<List<int>>();
-        while ((line = file.ReadLine()) != null)
-        {
-            List<int> IntHints = new List<int>();
-            string[] hints = line.Split(',');
-            for (int cont = 0; cont < hints.Length; cont++)
-            {
-                IntHints.Add(Convert.ToInt32(hints[cont].Trim()));
-            }
-            VerticalHints.Add(IntHints);
-        }
-        board.setVerticalHints(VerticalHints);
-        board.setHorizontalHints(HorizontalHints);
-        board.setMatrix(Matrix);
-        return board;
-    }
-
     public bool backtracking(Tuple<int, int, bool> indexes)
     {
         if (indexes.Item3)
@@ -233,6 +198,26 @@ public class NonogramBoard
         return false;
     }
 
+    public bool backtrackingDup()
+    {
+        Tuple<bool, int, int> emptySquare = findEmptySquareDup();
+        if (!emptySquare.Item1)
+            return true;
+        int indexX = emptySquare.Item2;
+        int indexY = emptySquare.Item3;
+        for (byte i = 1; i <= 2; i++)
+        {
+            if (isValid(indexX, indexY, i))
+            {
+                Matrix[indexX, indexY] = i;
+                if (backtrackingDup())
+                    return true;
+                Matrix[indexX, indexY] = 0;
+            }
+        }
+        return false;
+    }
+
     private Tuple<int, int, bool> findEmptySquare(int indexX, int indexY)
     {
         if (indexX == (rows - 1))
@@ -245,6 +230,15 @@ public class NonogramBoard
         else
             indexX++;
         return Tuple.Create(indexX, indexY, false);
+    }
+
+    private Tuple<bool, int, int> findEmptySquareDup()
+    {
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < columns; j++)
+                if (Matrix[i, j] == 0)
+                    return Tuple.Create(true, i, j);
+        return Tuple.Create(false, 0, 0);
     }
 
     private bool isValid(int indexX, int indexY, int value)
@@ -389,11 +383,31 @@ public class NonogramBoard
         return false;
     }
 
-    public void TimedBacktracking()
+    public void TimedBacktracking(System.Object obj)
     {
+        bool primaryAlgorithm;
+        try
+        {
+            primaryAlgorithm = (bool) obj;
+        }
+        catch (InvalidCastException)
+        {
+            primaryAlgorithm = true;
+        }
         Stopwatch stopwatch = Stopwatch.StartNew();
-        this.Solvable = backtracking(Tuple.Create(0, 0, false));
+        if (primaryAlgorithm)
+            this.Solvable = backtracking(Tuple.Create(0, 0, false));
+        else
+            this.Solvable = backtrackingDup();
         stopwatch.Stop();
         this.SolvingTime = stopwatch.ElapsedMilliseconds;
+        Holder.mutexLock.WaitOne();
+        if (!Holder.isThreadDone())
+        {
+            UnityEngine.Debug.Log("Thread entered");
+            Holder.setThreadDone();
+            Winner = true;
+        }
+        Holder.mutexLock.ReleaseMutex();
     }
 }
