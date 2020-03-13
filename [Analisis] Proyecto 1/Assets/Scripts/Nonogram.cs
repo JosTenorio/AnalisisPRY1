@@ -404,7 +404,6 @@ public class NonogramBoard
         Holder.mutexLock.WaitOne();
         if (!Holder.isThreadDone())
         {
-            UnityEngine.Debug.Log("Thread entered");
             Holder.setThreadDone();
             Winner = true;
         }
