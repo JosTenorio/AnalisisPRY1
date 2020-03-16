@@ -15,13 +15,18 @@ public class Holder : MonoBehaviour
     private static GameObject[,] Grid;
     private static float tileSize, tileSpace, width, height;
     private static bool animateThread, threadDone;
-    private Thread thread, threadDup;
+    private static Thread thread, threadDup;
     public static Mutex mutexLock = new Mutex();
 
     public static void setCurrentNonogramBoard(NonogramBoard nonogramBoard)
     {
-        CurrentNonogramBoard = nonogramBoard;
-        CurrentNonogramBoardDup = CurrentNonogramBoard.deepCopy();
+        if (nonogramBoard != null)
+        {
+            CurrentNonogramBoard = nonogramBoard;
+            CurrentNonogramBoardDup = CurrentNonogramBoard.deepCopy();
+            thread = new Thread(CurrentNonogramBoard.TimedBacktracking);
+            threadDup = new Thread(CurrentNonogramBoardDup.TimedBacktracking);
+        }
     }
 
     public static NonogramBoard getCurrentNonogramBoard()
@@ -50,30 +55,26 @@ public class Holder : MonoBehaviour
     {
         if (CurrentNonogramBoard.isAnimated())
         {
-            thread = new Thread(CurrentNonogramBoard.TimedBacktracking);
             thread.Start(true);
             animateThread = true;
         }
         else
         {
-            thread = new Thread(CurrentNonogramBoard.TimedBacktracking);
-            threadDup = new Thread(CurrentNonogramBoardDup.TimedBacktracking);
             thread.Start(true);
             threadDup.Start(false);
         }
+        GameObject.Find("Button Start").GetComponent<Button>().interactable = false;
     }
 
     public void setWinnerThread()
     {
         if (CurrentNonogramBoard.isWinner())
         {
-            threadDup.Abort();
             UnityEngine.Debug.Log("Solved by Thread 1");
         }
         else
         {
             CurrentNonogramBoard = CurrentNonogramBoardDup;
-            thread.Abort();
             UnityEngine.Debug.Log("Solved by Thread 2");
         }
     }
@@ -163,6 +164,7 @@ public class Holder : MonoBehaviour
         threadDone = animateThread = false;
         generateGrid(CurrentNonogramBoard);
         drawGrid(CurrentNonogramBoard);
+        GameObject.Find("Button Start").GetComponent<Button>().interactable = true;
     }
 
     private void FixedUpdate()
@@ -178,6 +180,10 @@ public class Holder : MonoBehaviour
             updateText(CurrentNonogramBoard);
             CurrentNonogramBoard.print();
             animateThread = threadDone = false;
+            if (thread.IsAlive)
+                thread.Abort();
+            if (threadDup.IsAlive)
+                threadDup.Abort();
         }
     }
 
